@@ -44,6 +44,28 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
 
+      - name: Install Wine (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update
+          sudo apt-get install -y wine wine32 wine64
+          wine --version  # Verify installation
+
+      - name: Install Wine (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          # Try wine-stable cask first
+          if ! brew install --cask --no-quarantine wine-stable; then
+            # Fallback to wine formula if cask fails
+            brew install wine
+          fi
+          wine --version  # Verify installation
+
+      - name: Make tools executable
+        if: runner.os != 'Windows'
+        run: chmod +x tools/nwnnsscomp.exe
+
       - name: Build with Maven
         run: mvn clean compile -B
 

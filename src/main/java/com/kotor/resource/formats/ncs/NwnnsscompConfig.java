@@ -120,11 +120,7 @@ public class NwnnsscompConfig {
          }
       }
 
-      // Prepend the executable path
-      String[] result = new String[args.size() + 1];
-      result[0] = executable;
-      System.arraycopy(args.toArray(new String[0]), 0, result, 1, args.size());
-      return result;
+      return buildCommand(executable, args);
    }
 
    /**
@@ -144,11 +140,10 @@ public class NwnnsscompConfig {
       // No -d, -o, or -g flags
       if (chosenCompiler == KnownExternalCompilers.NCSDIS) {
          // ncsdis command: ncsdis.exe <input.ncs> <output.pcode>
-         return new String[] {
-            executable,
-            sourceFile.getAbsolutePath(),
-            outputFile.getAbsolutePath()
-         };
+         java.util.List<String> args = new java.util.ArrayList<>();
+         args.add(sourceFile.getAbsolutePath());
+         args.add(outputFile.getAbsolutePath());
+         return buildCommand(executable, args);
       }
 
       return formatArgs(chosenCompiler.getDecompileArgs(), executable);
@@ -178,11 +173,39 @@ public class NwnnsscompConfig {
          }
       }
 
-      // Prepend the executable path
-      String[] result = new String[formatted.size() + 1];
-      result[0] = executable;
-      System.arraycopy(formatted.toArray(new String[0]), 0, result, 1, formatted.size());
-      return result;
+      return buildCommand(executable, formatted);
+   }
+
+   /**
+    * Builds a command array from executable and arguments, prepending {@code wine} on
+    * non-Windows systems when the executable is a {@code .exe} file.
+    *
+    * @param executable The executable path
+    * @param args The list of arguments (excluding the executable itself)
+    * @return Full command array ready for {@link ProcessBuilder}
+    */
+   private String[] buildCommand(String executable, java.util.List<String> args) {
+      String osName = System.getProperty("os.name").toLowerCase();
+      boolean isWindows = osName.startsWith("windows");
+
+      if (!isWindows && executable.toLowerCase().endsWith(".exe")) {
+         // Use Wine to run .exe on non-Windows platforms
+         String[] result = new String[args.size() + 2];
+         result[0] = "wine";
+         result[1] = executable;
+         for (int i = 0; i < args.size(); i++) {
+            result[i + 2] = args.get(i);
+         }
+         return result;
+      } else {
+         // Prepend the executable path (Windows or non-.exe executable)
+         String[] result = new String[args.size() + 1];
+         result[0] = executable;
+         for (int i = 0; i < args.size(); i++) {
+            result[i + 1] = args.get(i);
+         }
+         return result;
+      }
    }
 
    /**

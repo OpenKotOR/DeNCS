@@ -77,6 +77,9 @@ build/
 build-gui/
 META-INF/
 *.ncs
+tools/*.nss
+!tools/k1_nwscript.nss
+!tools/k1_asc_donotuse_nwscript.nss
 
 # Vendor dependencies (external code)
 vendor/
